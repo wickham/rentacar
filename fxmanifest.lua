@@ -1,9 +1,9 @@
 fx_version "adamant"
 
-description "EyesStore"
-author "Raider#0101"
+description "Rent-a-Car!"
+author "ChronoRift, Raider#0101"
 version '1.0.0'
-repository 'https://discord.com/invite/EkwWvFS'
+repository 'https://github.com/wickham/rentacar'
 
 game "gta5"
 
@@ -15,14 +15,10 @@ shared_scripts {'@ox_lib/init.lua', "main/shared.lua"}
 
 ui_page "index.html"
 
-files {'index.html', 'vue.js', 'assets/**/*.*', 'assets/font/*.otf',
-       'assets/font/Mark_Simonson_Proxima_Nova_Extra_Condensed_Light_Italic_TheFontsMaster.com.otf',
-       'assets/font/Mark_Simonson_Proxima_Nova_Condensed_Light_Italic_TheFontsMaster.com.otf',
-       'assets/font/Mark_Simonson_Proxima_Nova_Condensed_Thin_TheFontsMaster.com.otf'}
+files {'index.html', 'assets/**/*.*'}
 
 dependencies {'ox_lib'}
 
 escrow_ignore {'main/shared.lua'}
 
 lua54 'yes'
--- dependency '/assetpacks'

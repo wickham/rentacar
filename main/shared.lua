@@ -2,8 +2,10 @@ ESX = nil
 TriggerEvent("esx:getSharedObject", function(obj)
     ESX = obj
 end)
-
 Config = {}
+
+Config.ClientDebugPrint = false
+
 Config.Time = 300 -- car rental time example 2 minutes
 Config.PlateText = 'RENT ' -- rented car plate number (max 8 characters) e.g. RENT 000
 Config.MarkerName = ""
@@ -11,23 +13,6 @@ Config.CleanupRadius = 2
 Config.EnableInspect = true
 Config.Locations = {
     ["Touchdown Rentals"] = {
-        --     {
-        --     coords = vector3(237.3967, -763.023, 29.824),
-        --     hash = "a_m_o_soucent_01",
-        --     heading = 170.00,
-        --     marker = "Rent",
-        --     vehicle = vector4(235.8658, -782.916, 30.645, 179.64),
-        --     location = {
-        --         posX = 233.37,
-        --         posY = -789.9,
-        --         posZ = 30.6,
-        --         rotX = 0.0,
-        --         rotY = 0.0,
-        --         rotZ = -22.0,
-        --         fov = 50.0
-        --     },
-        --     spawn = vector3(229.3833, -800.980, 30.037)
-        -- }
         coords = vector3(-833.3300170898438, -2348.409912109375, 13.58),
         hash = "a_m_y_business_02",
         scenario = "WORLD_HUMAN_CLIPBOARD",
@@ -107,6 +92,7 @@ Config.GetVehFuel = function(Veh)
     return GetVehicleFuelLevel(Veh) -- exports["LegacyFuel"]:GetFuel(Veh)
 end
 
+-- TODO: Make these configurable based on location pair
 Config.Vehicles = {{
     model = "faggio2",
     label = "FAGGIO",
@@ -251,3 +237,8 @@ RENTACAR.Functions = {
     end
 }
 
+function clientDebugPrint(...)
+    if Config.DebugPrint or Config.ClientDebugPrint then
+        print(...)
+    end
+end

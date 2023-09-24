@@ -13,24 +13,6 @@ AddEventHandler("rentacar:setInitialStocks", function()
     SetVehicleStocksFromConfig()
 end)
 
-ESX.RegisterCommand('rrefresh', 'admin', function(xPlayer, args, showError)
-    SetVehicleStocksFromConfig()
-end, false, {
-    help = 'Refresh rental stock!'
-})
-
-ESX.RegisterCommand('rstock', 'admin', function(xPlayer, args, showError)
-    GetVehicleStocks()
-end, false, {
-    help = 'Get rental stock!'
-})
-
-ESX.RegisterCommand('rmen', 'admin', function(xPlayer, args, showError)
-    TriggerClientEvent("rmen", -1)
-end, false, {
-    help = 'Get rental stock!'
-})
-
 local function isempty(s)
     return s == nil or s == ''
 end

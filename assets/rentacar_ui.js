@@ -5,6 +5,31 @@ let max_accel = 0.5;
 let max_storage = 400;
 let debug = false;
 
+let brands = {
+    "ALBANY": "https://static.wikia.nocookie.net/gtawiki/images/1/1a/Albany-GTAO-Logo.png",
+    "ANNIS": "https://static.wikia.nocookie.net/gtawiki/images/3/3c/Annis-Logo-GTAO.png",
+    "BENEFAC": "https://static.wikia.nocookie.net/gtawiki/images/1/1d/Benefactor-GTAO-Logo.png",
+    "BRAVADO": "https://static.wikia.nocookie.net/gtawiki/images/f/f3/Bravado-GTAO-Logo.png",
+    "COIL": "https://static.wikia.nocookie.net/gtawiki/images/5/5a/Coil-Logo-GTAO.png",
+    "CHEVAL": "https://static.wikia.nocookie.net/gtawiki/images/b/bc/Cheval-Logo-Badge-GTAO.png",
+    "CRUSIER": "./assets/img/probikes_logo.png",
+    "DECLASSE": "https://static.wikia.nocookie.net/gtawiki/images/d/d0/Declasse-GTAO-Logo-New.png",
+    "DEWBAUCH": "./assets/img/dewbauchee.png",
+    "DUNDREAR": "https://static.wikia.nocookie.net/gtawiki/images/9/9d/Dundreary-GTAO-Logo.png",
+    "EMPEROR": "https://static.wikia.nocookie.net/gtawiki/images/1/16/Emperor-GTAO-Logo.png",
+    "FIXTER": "./assets/img/probikes_logo.png",
+    "GALLIVAN": "./assets/img/gallivanter.png",
+    "GROTTI": "https://static.wikia.nocookie.net/gtawiki/images/3/35/Grotti-GTAV-Logo.png",
+    "OBEY": "https://static.wikia.nocookie.net/gtawiki/images/3/38/Obey-Logo-Badge-GTAO.png",
+    "OCELOT": "https://static.wikia.nocookie.net/gtawiki/images/7/76/Ocelot-GTAO-Logo.png",
+    "PEGASSI": "https://static.wikia.nocookie.net/gtawiki/images/4/42/Pegassi-GTAO-Logo.png",
+    "PFISTER": "https://static.wikia.nocookie.net/gtawiki/images/8/88/Pfister-GTAO-Logo.png",
+    "SCORCHER": "./assets/img/probikes_logo.png",
+    "UBERMACH": "./assets/img/ubermacht.png",
+    "VAPID": "https://static.wikia.nocookie.net/gtawiki/images/3/33/Vapid-GTAO-Logo.png",
+    "WEENY": "https://static.wikia.nocookie.net/gtawiki/images/3/3b/Weeny-GTAO-Logo.png"
+}
+
 function setOpacity(isTrue) {
     const mainPage = document.getElementById('main');
     mainPage.style.opacity = isTrue ? 1 : 0;
@@ -259,30 +284,7 @@ function updateBRAND(this_brand) {
 
     // Supported URLs
     var imageUrl = "";
-    let supported_makes = {
-        "ALBANY": "https://static.wikia.nocookie.net/gtawiki/images/1/1a/Albany-GTAO-Logo.png",
-        "ANNIS": "https://static.wikia.nocookie.net/gtawiki/images/3/3c/Annis-Logo-GTAO.png",
-        "BENEFAC": "https://static.wikia.nocookie.net/gtawiki/images/1/1d/Benefactor-GTAO-Logo.png",
-        "BRAVADO": "https://static.wikia.nocookie.net/gtawiki/images/f/f3/Bravado-GTAO-Logo.png",
-        "COIL": "https://static.wikia.nocookie.net/gtawiki/images/5/5a/Coil-Logo-GTAO.png",
-        "CHEVAL": "https://static.wikia.nocookie.net/gtawiki/images/b/bc/Cheval-Logo-Badge-GTAO.png",
-        "CRUSIER": "./assets/img/probikes_logo.png",
-        "DECLASSE": "https://static.wikia.nocookie.net/gtawiki/images/d/d0/Declasse-GTAO-Logo-New.png",
-        "DEWBAUCH": "./assets/img/dewbauchee.png",
-        "DUNDREAR": "https://static.wikia.nocookie.net/gtawiki/images/9/9d/Dundreary-GTAO-Logo.png",
-        "EMPEROR": "https://static.wikia.nocookie.net/gtawiki/images/1/16/Emperor-GTAO-Logo.png",
-        "FIXTER": "./assets/img/probikes_logo.png",
-        "GALLIVAN": "./assets/img/gallivanter.png",
-        "GROTTI": "https://static.wikia.nocookie.net/gtawiki/images/3/35/Grotti-GTAV-Logo.png",
-        "OBEY": "https://static.wikia.nocookie.net/gtawiki/images/3/38/Obey-Logo-Badge-GTAO.png",
-        "OCELOT": "https://static.wikia.nocookie.net/gtawiki/images/7/76/Ocelot-GTAO-Logo.png",
-        "PEGASSI": "https://static.wikia.nocookie.net/gtawiki/images/4/42/Pegassi-GTAO-Logo.png",
-        "PFISTER": "https://static.wikia.nocookie.net/gtawiki/images/8/88/Pfister-GTAO-Logo.png",
-        "SCORCHER": "./assets/img/probikes_logo.png",
-        "UBERMACH": "./assets/img/ubermacht.png",
-        "VAPID": "https://static.wikia.nocookie.net/gtawiki/images/3/33/Vapid-GTAO-Logo.png",
-        "WEENY": "https://static.wikia.nocookie.net/gtawiki/images/3/3b/Weeny-GTAO-Logo.png"
-    };
+    let supported_makes = brands;
     if (this_brand != "") {
         imageUrl = supported_makes[this_brand.toUpperCase()] || "";
     }
@@ -347,12 +349,15 @@ window.addEventListener('message', function (event) {
     }
 })
 
-// setOpacity(true);
-//         updateUI({
-//             "mph":110,
-//             "mpg": 0.0, // get this from legacyfuelredux
-//             "seats": 4,
-//             "storage": 180, // get this from mf-inventory
-//             "brand": "GROTTI",
-//           "accel": 200
-//         });
+
+if (debug) {
+    setOpacity(true);
+    updateUI({
+        "mph": 110,
+        "mpg": 0.0, // get this from legacyfuelredux
+        "seats": 4,
+        "storage": 180, // get this from mf-inventory
+        "brand": "GROTTI",
+        "accel": 200
+    });
+}

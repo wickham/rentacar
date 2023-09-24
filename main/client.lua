@@ -34,26 +34,6 @@ AddEventHandler('esx:onPlayerSpawn', function()
 
 end)
 
-RegisterNUICallback("Vehicle", function(data, cb)
-    local model = GetHashKey(data.vehicle.model)
-    RequestModel(model)
-    while not HasModelLoaded(model) do
-        Wait(7)
-    end
-    currentVeh = CreateVehicle(model, vehicle.x, vehicle.y, vehicle.z, vehicle.w, false, true)
-    ESX.TriggerServerCallback("getRentalCount", function(rental_count)
-        SetVehicleNumberPlateText(currentVeh, Config.PlateText .. string.format("%03d", rental_count % 1000))
-    end)
-    SetVehicleEngineOn(currentVeh, true, true, false)
-    Camera()
-    cb({
-        fuel = Config.GetVehFuel(currentVeh),
-        speed = GetVehicleEstimatedMaxSpeed(currentVeh),
-        traction = GetVehicleMaxTraction(currentVeh),
-        acceleration = GetVehicleAcceleration(currentVeh)
-    })
-end)
-
 AddEventHandler("rentacar:rentVehicle", function(args)
     SendNUIMessage({
         type = "ui",
@@ -66,7 +46,7 @@ AddEventHandler("rentacar:rentVehicle", function(args)
     local parking = args.spawns
     ESX.TriggerServerCallback("isPrice", function(istrue)
         if istrue == true then
-            EYESSpawnVehicle(data.model, function(car)
+            SpawnVehicle(data.model, function(car)
 
                 SetNetworkIdAlwaysExistsForPlayer(NetworkGetNetworkIdFromEntity(car), PlayerPedId(), true)
                 SetEntityAsMissionEntity(car, true, true)
@@ -74,7 +54,7 @@ AddEventHandler("rentacar:rentVehicle", function(args)
 
                 toggleNoCollision(car, true)
                 makeVehicleSafe(car, nil)
-                -- SetVehicleNumberPlateText(car, Config.PlateText)
+
                 -- GIVE KEYS
                 TriggerServerEvent('cd_garage:GiveKeys', 'temp', exports['cd_garage']:GetPlate(car), -1)
                 ESX.TriggerServerCallback("createRenterPlate", function(rental_plate)
@@ -211,7 +191,7 @@ AddEventHandler("rentacar:previewRentalView", function(data)
     -- Send data to UI
     -- Spawn vehicle based on data
     -- Move camera
-    -- Render new Menu previewRentalView 
+    -- Render new Menu previewRentalView
     local calculated_data = spawnAndCalculateData(data)
     SendNUIMessage({
         type = "update",
@@ -263,55 +243,6 @@ AddEventHandler("rentacar:exitPreview", function(data)
     DisplayRadar(true)
     DisplayHud(true)
 end)
-
-RegisterNUICallback("Buy", function(data)
-    ESX.TriggerServerCallback("isPrice", function(istrue)
-        if istrue == true then
-            EYESSpawnVehicle(data.model, function(car)
-                SetNetworkIdAlwaysExistsForPlayer(NetworkGetNetworkIdFromEntity(car), PlayerPedId(), true)
-                SetEntityHeading(car, vehicle.w)
-                SetEntityAsMissionEntity(car, true, true)
-                SetVehicleEngineOn(car, true, true)
-
-                -- SetVehicleNumberPlateText(car, Config.PlateText)
-                -- GIVE KEYS
-                TriggerServerEvent('cd_garage:GiveKeys', 'temp', exports['cd_garage']:GetPlate(car), -1)
-                ESX.TriggerServerCallback("createRenterPlate", function(rental_plate)
-                    SetVehicleNumberPlateText(car, rental_plate)
-                    TriggerEvent('cd_garage:AddKeys', exports['cd_garage']:GetPlate(car))
-                    SetVehicleFuelLevel(car, 100.0)
-                    TaskWarpPedIntoVehicle(PlayerPedId(), car, -1)
-
-                    DisplayRadar(true)
-                    DisplayHud(true)
-                    -- ADD RENTAL PAPER LOGIC HERE
-                    TriggerServerEvent("inventory:registerVehicleInventory", exports['cd_garage']:GetPlate(car))
-                    PutPapersInGlovebox(exports['cd_garage']:GetPlate(car))
-                    TriggerEvent("swt_notifications:captionIcon", "", "Papers are in the glove box!", "top", 4000,
-                        "positive", "white", true, "mdi-clipboard-check-multiple")
-                end)
-            end, spawns, true)
-        elseif istrue == "broke" then
-            TriggerEvent("swt_notifications:captionIcon", "", "Not Enough Cash", "top", 4000, "negative", "white", true,
-                "mdi-currency-usd-off")
-        elseif istrue == "no_stock" then
-            TriggerEvent("swt_notifications:captionIcon", "Out of Stock", "", "top", 4000, "grey", "white", true,
-                "mdi-cart-off")
-        elseif istrue == "no_vehicle" then
-            TriggerEvent("swt_notifications:captionIcon", "No Vehicle", "", "top", 4000, "grey", "white", true,
-                "mdi-error")
-        else
-            TriggerEvent("swt_notifications:captionIcon", "", "Not Enough Cash", "top", 4000, "negative", "white", true,
-                "mdi-currency-usd-off")
-        end
-    end, data.price, data.model)
-end)
-
-function second(time)
-    local minutes = math.floor((time % 3600 / 60))
-    local seconds = math.floor((time % 60))
-    return string.format("%02dm %02ds", minutes, seconds)
-end
 
 function rent(vehicle)
     time = Config.Time
@@ -367,7 +298,7 @@ function ELoadModel(model)
     end
 end
 
-function EYESSpawnVehicle(model, cb, spawns, isnetworked, teleportInto)
+function SpawnVehicle(model, cb, spawns, isnetworked, teleportInto)
     local ped = PlayerPedId()
     model = type(model) == "string" and GetHashKey(model) or model
     if not IsModelInCdimage(model) then
@@ -386,9 +317,9 @@ function EYESSpawnVehicle(model, cb, spawns, isnetworked, teleportInto)
     local veh = CreateVehicle(model, coords.x, coords.y, coords.z, coords.w, isnetworked, false)
     rent(veh)
     local cars = ESX.Game.GetVehiclesInArea(coords, 1.0)
-    -- print(cars)
+    clientDebugPrint(cars)
     for _, v in pairs(cars) do
-        -- print(_, v)
+        clientDebugPrint(_, v)
     end
 
     local netid = NetworkGetNetworkIdFromEntity(veh)
@@ -402,9 +333,9 @@ function EYESSpawnVehicle(model, cb, spawns, isnetworked, teleportInto)
         TaskWarpPedIntoVehicle(PlayerPedId(), veh, -1)
     end
     if is_safe then
-        -- print("SAFE FOR SPAWN")
+        clientDebugPrint("SAFE FOR SPAWN")
     else
-        -- print("NOT SAFE!")
+        clientDebugPrint("NOT SAFE!")
 
     end
 
@@ -635,14 +566,14 @@ getAvailableSpawn = function(available_spawns)
     for _, location in pairs(available_spawns) do
         -- if vehicle in location try next until index expires
         if ESX.Game.IsSpawnPointClear(vector3(location.x, location.y, location.z), 2) then
-            -- print("safe space")
+            clientDebugPrint("safe space")
             return location, true
         elseif occupied_spots >= #available_spawns then
-            -- print("getting random location")
-            -- print(location.x, location.y, location.z)
+            clientDebugPrint("getting random location")
+            clientDebugPrint(location.x, location.y, location.z)
             break
         end
-        -- print("OCCUPIED")
+        clientDebugPrint("OCCUPIED")
         occupied_spots = occupied_spots + 1
     end
     -- if index is past length, retrun first spot with invuln until safe
@@ -666,16 +597,16 @@ makeVehicleSafe = function(veh_entity, spawn)
             spawn_coords = vector3(spawn.x, spawn.y, spawn.z)
         end
 
-        -- print("dont collide")
+        clientDebugPrint("dont collide")
         while (not_safe) do
             if IsPedInVehicle(GetPlayerPed(), vehicle, false) and
                 GetDistanceBetweenCoords(veh_coords.x, veh_coords.y, veh_coords.z, spawn_coords.x, spawn_coords.y,
                     spawn_coords.z, false) < 10 then
 
-                -- -- print("vehicles in area\n")
+                clientDebugPrint("vehicles in area\n")
                 not_safe = true
             else
-                -- print("left area")
+                clientDebugPrint("left area")
                 not_safe = false
             end
             veh_coords = GetEntityCoords(vehicle)
@@ -691,7 +622,7 @@ end
 
 function toggleNoCollision(vehicle, starter)
     Citizen.CreateThread(function()
-        -- print("collision = ", starter)
+        clientDebugPrint("collision = ", starter)
         if not starter then
             SetEntityNoCollisionEntity(v, vehicle, false)
         end
@@ -711,20 +642,21 @@ function toggleNoCollision(vehicle, starter)
                     close_veh = close_veh + 1
                     collision_list[v] = true
                     SetEntityNoCollisionEntity(v, veh, false)
-                    -- print("-- DMG OFF --")
+                    clientDebugPrint("-- DMG OFF --")
                 elseif not isEmpty(collision_list) and collision_list[v] then
                     SetEntityNoCollisionEntity(v, veh, true)
                     collision_list[v] = false
                 end
             end
-            -- print("NUMBER OF VEH", close_veh)
+            clientDebugPrint("NUMBER OF VEH", close_veh)
             if close_veh == 0 then
                 lock = false
                 SetEntityNoCollisionEntity(v, veh, true)
-                -- print("++ DMG ON ++")
+                clientDebugPrint("++ DMG ON ++")
             end
             Citizen.Wait(500)
-            -- print("SEATED", IsPedInVehicle(ped, veh, false))
+            clientDebugPrint("SEATED", IsPedInVehicle(ped, veh, false))
+
             if not IsPedInVehicle(ped, veh, false) then
                 lock = false
             end
@@ -732,6 +664,7 @@ function toggleNoCollision(vehicle, starter)
     end)
 end
 
+-- HELPER FUNCTIONS
 function isEmpty(value)
     if value == nil or value == "" then
         return true
@@ -742,4 +675,10 @@ end
 
 function getSpawnLocations(label)
     return Config.Locations[label].spawns
+end
+
+function second(time)
+    local minutes = math.floor((time % 3600 / 60))
+    local seconds = math.floor((time % 60))
+    return string.format("%02dm %02ds", minutes, seconds)
 end
