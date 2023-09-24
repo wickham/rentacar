@@ -76,7 +76,7 @@ Config.Locations = {
                     maxZ = 13.58 + 2.5
                 }, {
                     options = {{
-                        event = 'es-rentacar:showAll',
+                        event = 'rentacar:showAll',
                         args = {
                             car_preview = vector4(-833.8499755859375, -2335.4599609375, 14.13000011444091, 26.8),
                             camera = {

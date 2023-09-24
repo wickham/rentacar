@@ -8,8 +8,8 @@ AddEventHandler('onResourceStart', function(resource)
     SetVehicleStocksFromConfig()
 end)
 
-RegisterServerEvent("es-rentacar:setInitialStocks")
-AddEventHandler("es-rentacar:setInitialStocks", function()
+RegisterServerEvent("rentacar:setInitialStocks")
+AddEventHandler("rentacar:setInitialStocks", function()
     SetVehicleStocksFromConfig()
 end)
 

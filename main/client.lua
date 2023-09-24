@@ -20,7 +20,7 @@ AddEventHandler('onResourceStart', function(resource)
     end
     lib.hideContext()
     -- Cleanup and lingering vehicles in spawn and preview locations
-    TriggerEvent("es-rentacar:cleanupAreas")
+    TriggerEvent("rentacar:cleanupAreas")
     refreshStock()
 
 end)
@@ -29,7 +29,7 @@ AddEventHandler('esx:onPlayerSpawn', function()
     -- Cleanup menus if they were left open on restart
     lib.hideContext()
     -- Cleanup and lingering vehicles in spawn and preview locations
-    TriggerEvent("es-rentacar:cleanupAreas")
+    TriggerEvent("rentacar:cleanupAreas")
     refreshStock()
 
 end)
@@ -54,13 +54,13 @@ RegisterNUICallback("Vehicle", function(data, cb)
     })
 end)
 
-AddEventHandler("es-rentacar:rentVehicle", function(args)
+AddEventHandler("rentacar:rentVehicle", function(args)
     SendNUIMessage({
         type = "ui",
         data = false
     })
     SetNuiFocus(false, false)
-    TriggerEvent("es-rentacar:retalSelected")
+    TriggerEvent("rentacar:retalSelected")
 
     local data = args.data
     local parking = args.spawns
@@ -110,11 +110,11 @@ AddEventHandler("es-rentacar:rentVehicle", function(args)
 
 end)
 
-RegisterNetEvent("es-rentacar:rentalMenu", function(source)
+RegisterNetEvent("rentacar:rentalMenu", function(source)
     callRentalMenuUI()
 end)
 
-AddEventHandler("es-rentacar:cleanupPreviewArea", function()
+AddEventHandler("rentacar:cleanupPreviewArea", function()
     local radius = Config.CleanupRadius or 5
     if radius and tonumber(radius) then
         for _, v in pairs(Config.Locations) do
@@ -137,7 +137,7 @@ AddEventHandler("es-rentacar:cleanupPreviewArea", function()
     end
 end)
 
-AddEventHandler("es-rentacar:cleanupAreas", function()
+AddEventHandler("rentacar:cleanupAreas", function()
     local radius = Config.CleanupRadius or 5
     if radius and tonumber(radius) then
         for _, v in pairs(Config.Locations) do
@@ -177,7 +177,7 @@ AddEventHandler("es-rentacar:cleanupAreas", function()
     end
 end)
 
-AddEventHandler("es-rentacar:viewVehicle", function(this_location, cb)
+AddEventHandler("rentacar:viewVehicle", function(this_location, cb)
     local model = GetHashKey(this_location.vehicle.model)
     RequestModel(model)
     while not HasModelLoaded(model) do
@@ -198,16 +198,16 @@ AddEventHandler("es-rentacar:viewVehicle", function(this_location, cb)
 
 end)
 
-AddEventHandler("es-rentacar:showAll", function(data)
+AddEventHandler("rentacar:showAll", function(data)
     vehicle = data.args.car_preview
     location = data.args.camera
     spawns = data.args.car_spawns
     DisplayRadar(false)
     DisplayHud(false)
-    TriggerEvent("es-rentacar:rentalMenu")
+    TriggerEvent("rentacar:rentalMenu")
 end)
 
-AddEventHandler("es-rentacar:previewRentalView", function(data)
+AddEventHandler("rentacar:previewRentalView", function(data)
     -- Send data to UI
     -- Spawn vehicle based on data
     -- Move camera
@@ -220,7 +220,7 @@ AddEventHandler("es-rentacar:previewRentalView", function(data)
     previewRentalView(calculated_data)
 
 end)
-AddEventHandler("es-rentacar:retalSelected", function(data)
+AddEventHandler("rentacar:retalSelected", function(data)
     SetDisplay(false)
     DoScreenFadeOut(200)
     Citizen.Wait(200)
@@ -234,7 +234,7 @@ AddEventHandler("es-rentacar:retalSelected", function(data)
 
 end)
 
-AddEventHandler("es-rentacar:exit", function(data)
+AddEventHandler("rentacar:exit", function(data)
     SetDisplay(false)
     DestroyAllCams(true)
     RenderScriptCams(false, true, 1700, true, false, false)
@@ -244,17 +244,17 @@ AddEventHandler("es-rentacar:exit", function(data)
     DisplayHud(true)
 
 end)
-AddEventHandler("es-rentacar:outOfStock", function(data)
+AddEventHandler("rentacar:outOfStock", function(data)
     TriggerEvent("swt_notifications:captionIcon", "Out of Stock", "", "top", 4000, "grey", "white", true, "mdi-cart-off")
 
 end)
 
-AddEventHandler("es-rentacar:exitPreview", function(data)
+AddEventHandler("rentacar:exitPreview", function(data)
     SendNUIMessage({
         type = "ui",
         data = false
     })
-    TriggerEvent("es-rentacar:rentalMenu")
+    TriggerEvent("rentacar:rentalMenu")
     SetDisplay(false)
     DestroyAllCams(true)
     RenderScriptCams(false, true, 1700, true, false, false)
@@ -504,9 +504,9 @@ callRentalMenuUI = function()
             arrow = true,
             icon = Config.Vehicles[k].icon,
             iconColor = icon_color,
-            event = "es-rentacar:previewRentalView",
+            event = "rentacar:previewRentalView",
             args = Config.Vehicles[k], -- Table containing: model | label | price | stock
-            onSelect = TriggerEvent("es-rentacar:cleanupPreviewArea")
+            onSelect = TriggerEvent("rentacar:cleanupPreviewArea")
         }
     end
     lib.registerContext({
@@ -518,12 +518,12 @@ callRentalMenuUI = function()
                 type = "ui",
                 data = false
             })
-            TriggerEvent("es-rentacar:exit")
+            TriggerEvent("rentacar:exit")
         end
 
     })
     lib.showContext('rental_menu')
-    TriggerEvent("ox_lib:enableKeys", "es-rentacar")
+    TriggerEvent("ox_lib:enableKeys", "rentacar")
 
 end
 
@@ -534,7 +534,7 @@ previewRentalView = function(data)
     local icon_color = "#8a3737"
 
     if (veh_stocks[data.model] > 0) then
-        event_function = "es-rentacar:rentVehicle"
+        event_function = "rentacar:rentVehicle"
         desc = "Pay For Rental: $" .. data.price
         icon_color = nil
     end
@@ -543,7 +543,7 @@ previewRentalView = function(data)
         title = " Go Back",
         description = "",
         icon = "angle-left",
-        event = "es-rentacar:exitPreview"
+        event = "rentacar:exitPreview"
     }, {
         title = data.label,
         description = desc,
@@ -567,13 +567,13 @@ previewRentalView = function(data)
                 data = false
             })
             SetNuiFocus(false, false)
-            TriggerEvent("es-rentacar:exit")
+            TriggerEvent("rentacar:exit")
         end
 
     })
 
     lib.showContext('rental_menu2')
-    TriggerEvent("ox_lib:enableKeys", "es-rentacar")
+    TriggerEvent("ox_lib:enableKeys", "rentacar")
 end
 
 -- MENU HELPERS
