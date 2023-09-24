@@ -1,0 +1,209 @@
+/* Import the Roboto font from Google Fonts */
+
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap');
+
+body {
+    padding: 1rem
+}
+
+html {
+    font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 300;
+    background-color: rgba(200, 200, 200, 0.0);
+}
+
+main {
+    position: relative;
+}
+
+#main {
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out, all 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.bottom-left {
+    /* background-color: blue; */
+    position: absolute;
+    bottom: 8%;
+    left: 0%;
+    padding: 4%;
+    scale: 0.9
+}
+
+.bar1,
+.bar2,
+.bar3,
+.bar4 {
+    display: flex;
+    padding: 25px 15px;
+    text-align: center;
+}
+
+.fa-circle {
+    color: black;
+}
+
+.icon {
+    font-size: 50px;
+    text-align: center;
+    vertical-align: middle;
+    overflow: hidden;
+}
+
+.icon2 {
+    font-size: 30px;
+    text-align: center;
+    vertical-align: middle;
+    overflow: hidden;
+}
+
+.box {
+    background-color: rgba(26, 32, 44, 0.9);
+    padding: 0px 0px 0px 0px;
+    line-height: 50px;
+    width: 64px;
+    height: 54px;
+    margin-right: 10px;
+    transform: translate(0%, -30%);
+    border-radius: 5px;
+    color: rgba(220, 220, 220, 1);
+    filter: drop-shadow(0px 0px 1px rgba(0, 0, 0, .5));
+    position: relative;
+}
+
+.box2 {
+    background-color: rgba(26, 32, 44, 0.9);
+    padding: 0px 0px 0px 0px;
+    line-height: 30px;
+    width: 34px;
+    height: 34px;
+    margin-right: 10px;
+    transform: translate(0px, 28px);
+    border-radius: 5px;
+    color: rgba(220, 220, 220, 1);
+    position: relative;
+    z-index: 5;
+}
+
+.container {
+    width: 500px;
+    height: 20px;
+    border-radius: 5px;
+    background-color: #ccc;
+    overflow: visible;
+    filter: drop-shadow(0px 0px 2px rgba(0, 0, 0, .5));
+    z-index: -5;
+}
+
+.speed_bar {
+    width: 500px;
+    height: 20px;
+    border-radius: 5px;
+    position: absolute;
+    transform: translate(-45px, 0%);
+    scale: 0.6;
+    z-index: -6;
+}
+
+#MPH,
+#MPG,
+#SEATS,
+#STORAGE {
+    width: 500px;
+    height: 20px;
+    border-radius: 5px;
+    background-color: #000;
+    overflow: visible;
+    filter: drop-shadow(0px 0px 2px rgba(0, 0, 0, .5));
+    z-index: -1;
+}
+
+#ACCEL {
+    width: 500px;
+    height: 20px;
+    position: absolute;
+    border-radius: 5px;
+    background-color: #000;
+    overflow: visible;
+    filter: drop-shadow(0px 0px 2px rgba(0, 0, 0, .5));
+    z-index: -5;
+}
+
+#BRAND {
+    margin: 0 auto;
+    background-position: center;
+    background-size: cover;
+    /* background-color: red; */
+    background-image: url("");
+    opacity: 0.4;
+    scale: 0.6;
+    filter: drop-shadow(0px 0px 1px rgba(0, 0, 0, .5));
+    transform: translate(0%, 25%);
+}
+
+.bar {
+    position: relative;
+    width: 0%;
+    height: 100%;
+    border-radius: 5px;
+    background-color: red;
+    border-right: 0px rgba(0, 0, 0, 0) solid;
+    transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out;
+}
+
+#SEATS,
+#STORAGE {
+    background-color: rgb(26, 32, 44);
+}
+
+.tooltip {
+    font-family: 'Roboto', sans-serif;
+    /* Use the Roboto font */
+    position: absolute;
+    text-align: center;
+    width: 75px;
+    bottom: 0;
+    right: 0;
+    margin-left: 100px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 5px 15px;
+    border-radius: 5px;
+    opacity: 1;
+    float: right;
+    transform: translate(50%, 145%);
+    transition: opacity 0.3s ease-in-out;
+    z-index: 1;
+}
+
+
+/* creates triangle */
+
+.tooltip:after {
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    left: 22%;
+    width: 0;
+    border-width: 0px 15px 15px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.95) transparent;
+    transform: translate(50%, 0%);
+    transition: opacity 0.3s ease-in-out;
+}
+
+#widthInput {
+    width: 100px;
+    margin: 10px;
+}
