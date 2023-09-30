@@ -5,19 +5,22 @@ end)
 Config = {}
 
 Config.ClientDebugPrint = false
+Config.ServerDebugPrint = false
 
-Config.Time = 300 -- car rental time example 2 minutes
+Config.Time = false -- car rental time example 2 minutes
+Config.MaxRentals = 2
+Config.DepositPercent = 60 -- percent of the total price acting as deposit
 Config.PlateText = 'RENT ' -- rented car plate number (max 8 characters) e.g. RENT 000
 Config.MarkerName = ""
 Config.CleanupRadius = 2
 Config.EnableInspect = true
 Config.Locations = {
     ["Touchdown Rentals"] = {
+        label = "🏈 Touchdown Rentals",
         coords = vector3(-833.3300170898438, -2348.409912109375, 13.58),
         hash = "a_m_y_business_02",
         scenario = "WORLD_HUMAN_CLIPBOARD",
         heading = 270.2,
-        label = "Touchdown Rentals",
         vehicle = vector4(-833.8499755859375, -2335.4599609375, 14.13000011444091, 26.8),
         location = {
             posX = -834.14,
@@ -61,7 +64,7 @@ Config.Locations = {
                     maxZ = 13.58 + 2.5
                 }, {
                     options = {{
-                        event = 'rentacar:showAll',
+                        event = 'rentacar:TDshowAll',
                         args = {
                             car_preview = vector4(-833.8499755859375, -2335.4599609375, 14.13000011444091, 26.8),
                             camera = {
@@ -76,11 +79,10 @@ Config.Locations = {
                             car_spawns = {
                                 [1] = vector4(-823.8599853515625, -2343.030029296875, 14.02000045776367,
                                     149.7893829345703)
-
                             }
                         },
                         icon = 'fa-solid fa-comments',
-                        label = "Whatcha Got?"
+                        label = "Let's Talk"
                     }},
                     distance = 2.5
                 })
@@ -97,135 +99,158 @@ Config.Vehicles = {{
     model = "faggio2",
     label = "FAGGIO",
     price = 1000,
+    deposit = 5000,
     icon = "motorcycle",
     stock = 50
 }, {
     model = "oracle2",
     label = "ORACLE",
     price = 1000,
+    deposit = 5000,
     icon = "car-side",
     stock = 10
 }, {
-    model = "Jackal",
+    model = "jackal",
     label = "JACKAL",
     price = 1000,
+    deposit = 5000,
     icon = "car-side",
     stock = 10
 }, {
     model = "zion2",
     label = "ZION CABRIO",
     price = 1000,
+    deposit = 5000,
     icon = "car-side",
     stock = 10
 }, {
     model = "dominator",
     label = "DOMINATOR",
     price = 1000,
+    deposit = 5000,
     icon = "car-side",
     stock = 10
 }, {
     model = "schafter2",
     label = "SCHAFTER",
     price = 1000,
+    deposit = 5000,
     icon = "car-side",
     stock = 10
 }, {
     model = "dubsta",
     label = "DUBSTA",
     price = 1000,
+    deposit = 5000,
     icon = "van-shuttle",
     stock = 10
 }, {
     model = "raiden",
     label = "RAIDEN",
     price = 1000,
+    deposit = 5000,
     icon = "car-side",
     stock = 10
 }, {
     model = "ellie",
     label = "ELLIE",
     price = 1000,
+    deposit = 5000,
     icon = "car-side",
     stock = 10
 }, {
     model = "drafter",
     label = "8F DRAFTER",
     price = 1000,
+    deposit = 5000,
     icon = "car-side",
     stock = 1
 }, {
     model = "jugular",
     label = "JUGULAR",
     price = 1000,
+    deposit = 5000,
     icon = "car-side",
     stock = 10
 }, {
     model = "baller2",
     label = "BALLER LS",
     price = 1000,
+    deposit = 5000,
     icon = "van-shuttle",
     stock = 10
 }, {
     model = "stretch",
     label = "STRETCH",
     price = 1000,
+    deposit = 5000,
     icon = "van-shuttle",
     stock = 10
 }, {
     model = "rapidgt2",
     label = "RAPID GT CONV",
     price = 1000,
+    deposit = 5000,
     icon = "car-side",
     stock = 10
 }, {
     model = "surge",
     label = "SURGE",
     price = 1000,
+    deposit = 5000,
     icon = "car-side",
     stock = 10
 }, {
     model = "serrano",
     label = "SERRANO",
     price = 1000,
+    deposit = 5000,
     icon = "van-shuttle",
     stock = 10
 }, {
     model = "speedo",
     label = "SPEEDO",
     price = 1000,
+    deposit = 5000,
     icon = "van-shuttle",
     stock = 10
 }, {
     model = "bison",
     label = "BISON",
     price = 1000,
+    deposit = 5000,
     icon = "truck-pickup",
     stock = 10
 }, {
     model = "zentorno",
     label = "ZENTORNO",
     price = 1000,
+    deposit = 5000,
     icon = "car-side",
     stock = 0
 }, {
     model = "mamba",
     label = "MAMBA",
     price = 1000,
+    deposit = 5000,
     icon = "car-side",
     stock = 10
 }, {
     model = "xls",
     label = "XLS",
     price = 1000,
+    deposit = 5000,
     icon = "van-shuttle",
     stock = 10
 }, {
     model = "neon",
     label = "NEON",
     price = 1000,
+    deposit = 5000,
     icon = "car-side",
     stock = 10
 }}
+
 RENTACAR = {}
 RENTACAR.Functions = {
     CreateInspect = function()
@@ -239,6 +264,12 @@ RENTACAR.Functions = {
 
 function clientDebugPrint(...)
     if Config.DebugPrint or Config.ClientDebugPrint then
+        print(...)
+    end
+end
+
+function serverDebugPrint(...)
+    if Config.DebugPrint or Config.ServerDebugPrint then
         print(...)
     end
 end

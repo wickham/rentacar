@@ -35,9 +35,9 @@ main {
 .bottom-left {
     /* background-color: blue; */
     position: absolute;
-    bottom: 8%;
+    bottom: 4%;
     left: 0%;
-    padding: 4%;
+    padding: 2%;
     scale: 0.9
 }
 

@@ -7,18 +7,16 @@ repository 'https://github.com/wickham/rentacar'
 
 game "gta5"
 
-client_script {"main/client.lua"}
+client_script {"client/*.lua"}
 
-server_script {'@mysql-async/lib/MySQL.lua', "main/server.lua"}
+server_script {'@mysql-async/lib/MySQL.lua', "server/*.lua"}
 
-shared_scripts {'@ox_lib/init.lua', "main/shared.lua"}
+shared_scripts {'@ox_lib/init.lua', '@shared_lua/shared/vehicle_info.lua', "shared/*.lua"}
 
 ui_page "index.html"
 
 files {'index.html', 'assets/**/*.*'}
 
-dependencies {'ox_lib'}
-
-escrow_ignore {'main/shared.lua'}
+dependencies {'ox_lib', 'shared_lua'}
 
 lua54 'yes'

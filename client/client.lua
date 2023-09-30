@@ -3,7 +3,10 @@ TriggerEvent("esx:getSharedObject", function(obj)
     ESX = obj
 end)
 
+local server_vehicles = {}
+
 local starter = false
+local player_papers = {}
 local vehicle = nil
 local inMenu = false
 local spawns = {}
@@ -22,6 +25,7 @@ AddEventHandler('onResourceStart', function(resource)
     -- Cleanup and lingering vehicles in spawn and preview locations
     TriggerEvent("rentacar:cleanupAreas")
     refreshStock()
+    -- hasPapers("RENT 001")
 
 end)
 
@@ -50,15 +54,26 @@ AddEventHandler("rentacar:rentVehicle", function(args)
 
                 SetNetworkIdAlwaysExistsForPlayer(NetworkGetNetworkIdFromEntity(car), PlayerPedId(), true)
                 SetEntityAsMissionEntity(car, true, true)
-                SetVehicleEngineOn(car, true, true)
+                SetVehicleEngineOn(car, false, false, true)
 
                 toggleNoCollision(car, true)
                 makeVehicleSafe(car, nil)
 
-                -- GIVE KEYS
-                TriggerServerEvent('cd_garage:GiveKeys', 'temp', exports['cd_garage']:GetPlate(car), -1)
                 ESX.TriggerServerCallback("createRenterPlate", function(rental_plate)
+                    -- Set Plate Name
+                    TriggerServerEvent("rentacar:deleteInventory", rental_plate, data.model)
                     SetVehicleNumberPlateText(car, rental_plate)
+                    -- GIVE KEYS
+                    local name = GetLabelText(GetDisplayNameFromVehicleModel(GetEntityModel(car)))
+                    local primary, secondary = GetVehicleColours(car)
+                    local color = __VEHICLE_COLORS__[primary]
+
+                    exports["keys"]:GiveTemporaryKeys(PlayerId(), exports['cd_garage']:GetPlate(car), name, "rental")
+
+                    -- Store info in server
+                    TriggerServerEvent("rentacar:setClientRentals", -1, rental_plate,
+                        data.model:gsub("^%l", string.upper), color, rental_plate)
+                    -- TODO: Delete Current plate inventory
                     TriggerEvent('cd_garage:AddKeys', exports['cd_garage']:GetPlate(car))
                     SetVehicleFuelLevel(car, 100.0)
                     TaskWarpPedIntoVehicle(PlayerPedId(), car, -1)
@@ -67,7 +82,11 @@ AddEventHandler("rentacar:rentVehicle", function(args)
                     DisplayHud(true)
                     -- ADD RENTAL PAPER LOGIC HERE
                     TriggerServerEvent("inventory:registerVehicleInventory", exports['cd_garage']:GetPlate(car))
-                    PutPapersInGlovebox(exports['cd_garage']:GetPlate(car))
+
+                    PutPapersInGlovebox(exports['cd_garage']:GetPlate(car), {
+                        color = color,
+                        model = data.model:gsub("^%l", string.upper)
+                    })
                     refreshStock()
                     TriggerEvent("swt_notifications:captionIcon", "", "Papers are in the glove box!", "top", 4000,
                         "positive", "white", true, "mdi-clipboard-check-multiple")
@@ -82,16 +101,20 @@ AddEventHandler("rentacar:rentVehicle", function(args)
         elseif istrue == "no_vehicle" then
             TriggerEvent("swt_notifications:captionIcon", "No Vehicle", "", "top", 4000, "grey", "white", true,
                 "mdi-error")
+        elseif istrue == "max_rentals" then
+            TriggerEvent("swt_notifications:captionIcon", "Return an old rental or pay the return fee!",
+                "Rental Limit Exceeded!", "top", 10000, "grey", "white", true, "mdi-chat-alert")
         else
             TriggerEvent("swt_notifications:captionIcon", "", "Not Enough Cash", "top", 4000, "negative", "white", true,
                 "mdi-currency-usd-off")
         end
-    end, data.price, data.model)
+    end, (data.price + data.deposit), data.model)
 
 end)
 
-RegisterNetEvent("rentacar:rentalMenu", function(source)
-    callRentalMenuUI()
+RegisterNetEvent("rentacar:TDrentalMenu", function(source)
+    callMainMenuUI("Touchdown Rentals")
+    -- callRentalMenuUI()
 end)
 
 AddEventHandler("rentacar:cleanupPreviewArea", function()
@@ -178,13 +201,13 @@ AddEventHandler("rentacar:viewVehicle", function(this_location, cb)
 
 end)
 
-AddEventHandler("rentacar:showAll", function(data)
+AddEventHandler("rentacar:TDshowAll", function(data)
     vehicle = data.args.car_preview
     location = data.args.camera
     spawns = data.args.car_spawns
     DisplayRadar(false)
     DisplayHud(false)
-    TriggerEvent("rentacar:rentalMenu")
+    TriggerEvent("rentacar:TDrentalMenu")
 end)
 
 AddEventHandler("rentacar:previewRentalView", function(data)
@@ -234,7 +257,7 @@ AddEventHandler("rentacar:exitPreview", function(data)
         type = "ui",
         data = false
     })
-    TriggerEvent("rentacar:rentalMenu")
+    -- TriggerEvent("rentacar:TDrentalMenu")
     SetDisplay(false)
     DestroyAllCams(true)
     RenderScriptCams(false, true, 1700, true, false, false)
@@ -246,46 +269,48 @@ end)
 
 function rent(vehicle)
     time = Config.Time
-    Citizen.CreateThread(function()
-        while true do
-            Citizen.Wait(1)
-            if time ~= 0 then
-                Citizen.Wait(1000)
-                time = time - 1
-            else
-                -- SetVehicleUndriveable(vehicle, true)
-                TriggerEvent("swt_notifications:captionIcon", "", "Rental Expired!", "top", 4000, "negative", "white",
-                    true, "mdi-timer-alert")
-                TaskLeaveVehicle(GetPlayerPed(-1), GetVehiclePedIsIn(GetPlayerPed(-1), false), 4160)
-                SetVehicleDoorsLocked(vehicle, 6)
-                SetVehicleDoorsLocked(vehicle, 2)
-                Citizen.Wait(2500)
-                SetVehicleEngineHealth(vehicle, 0)
-                SetVehiclePetrolTankHealth(vehicle, 2)
-                SetVehicleOilLevel(vehicle, 1)
-                SetVehicleBodyHealth(vehicle, 2)
-                exports["legacyfuelredux"]:SetFuel(vehicle, 0.1)
+    if time ~= false then
+        Citizen.CreateThread(function()
+            while true do
+                Citizen.Wait(1)
+                if time ~= 0 then
+                    Citizen.Wait(1000)
+                    time = time - 1
+                else
+                    -- SetVehicleUndriveable(vehicle, true)
+                    TriggerEvent("swt_notifications:captionIcon", "", "Rental Expired!", "top", 4000, "negative",
+                        "white", true, "mdi-timer-alert")
+                    TaskLeaveVehicle(GetPlayerPed(-1), GetVehiclePedIsIn(GetPlayerPed(-1), false), 4160)
+                    SetVehicleDoorsLocked(vehicle, 6)
+                    SetVehicleDoorsLocked(vehicle, 2)
+                    Citizen.Wait(2500)
+                    SetVehicleEngineHealth(vehicle, 0)
+                    SetVehiclePetrolTankHealth(vehicle, 2)
+                    SetVehicleOilLevel(vehicle, 1)
+                    SetVehicleBodyHealth(vehicle, 2)
+                    exports["legacyfuelredux"]:SetFuel(vehicle, 0.1)
 
-                -- DeleteEntity(vehicle)
-                break
+                    -- DeleteEntity(vehicle)
+                    break
+                end
             end
-        end
-    end)
-    Citizen.CreateThread(function()
-        while time > 0 do
-            Citizen.Wait(0)
-            SetTextFont(4)
-            SetTextScale(0.45, 0.45)
-            SetTextColour(185, 185, 185, 255)
-            SetTextDropshadow(0, 0, 0, 0, 255)
-            SetTextEdge(1, 0, 0, 0, 255)
-            SetTextDropShadow()
-            SetTextOutline()
-            BeginTextCommandDisplayText('STRING')
-            AddTextComponentSubstringPlayerName(" ~g~ - CAR RENTAL DURATION:" .. second(time))
-            EndTextCommandDisplayText(0.05, 0.55)
-        end
-    end)
+        end)
+        Citizen.CreateThread(function()
+            while time > 0 do
+                Citizen.Wait(0)
+                SetTextFont(4)
+                SetTextScale(0.45, 0.45)
+                SetTextColour(185, 185, 185, 255)
+                SetTextDropshadow(0, 0, 0, 0, 255)
+                SetTextEdge(1, 0, 0, 0, 255)
+                SetTextDropShadow()
+                SetTextOutline()
+                BeginTextCommandDisplayText('STRING')
+                AddTextComponentSubstringPlayerName(" ~g~ - CAR RENTAL DURATION:" .. second(time))
+                EndTextCommandDisplayText(0.05, 0.55)
+            end
+        end)
+    end
 end
 
 function ELoadModel(model)
@@ -407,107 +432,65 @@ Citizen.CreateThread(function()
 end)
 
 PutPapersInGlovebox = function(plate, data)
+    clientDebugPrint(data)
+    clientDebugPrint(data.model)
+    clientDebugPrint(data.color)
     local glove_id = "glovebox_" .. plate
     TriggerServerEvent("GloveboxPapers", glove_id, "document_vehicle_rental", 1, 100.0, {
         plate = plate,
-        vin = plate
+        vin = plate,
+        model = data.model or "?",
+        color = data.color or "?"
     })
 end
 
--- MENU GENERATOR
--- Main Menu
-callRentalMenuUI = function()
-    local comp_options = {}
-    for k, v in pairs(Config.Vehicles) do
-        local available_text = "  |  Available"
-        local icon_color = "#67ee7f"
-        if (veh_stocks[v.model] <= 0) then
-            available_text = ""
-            icon_color = "#8a3737"
-        elseif (veh_stocks[v.model] <= 5) then
-            available_text = "  |  Low"
-            icon_color = "#f9ab53"
-        end
-
-        comp_options[k] = {
-            title = Config.Vehicles[k].label,
-            description = "Rental Fee: $" .. Config.Vehicles[k].price .. available_text,
-            arrow = true,
-            icon = Config.Vehicles[k].icon,
-            iconColor = icon_color,
-            event = "rentacar:previewRentalView",
-            args = Config.Vehicles[k], -- Table containing: model | label | price | stock
-            onSelect = TriggerEvent("rentacar:cleanupPreviewArea")
-        }
-    end
-    lib.registerContext({
-        id = 'rental_menu',
-        title = "🏈 Touchdown Rentals",
-        options = comp_options,
-        onExit = function()
-            SendNUIMessage({
-                type = "ui",
-                data = false
-            })
-            TriggerEvent("rentacar:exit")
-        end
-
-    })
-    lib.showContext('rental_menu')
-    TriggerEvent("ox_lib:enableKeys", "rentacar")
-
-end
-
--- Looking at Car Selected
-previewRentalView = function(data)
-    local event_function = nil
-    local desc = "Out of Stock"
-    local icon_color = "#8a3737"
-
-    if (veh_stocks[data.model] > 0) then
-        event_function = "rentacar:rentVehicle"
-        desc = "Pay For Rental: $" .. data.price
-        icon_color = nil
+function getNearbyRentals()
+    -- get current rentals from server
+    -- iter through and check if owner and car nearby, add to list
+    -- return list
+    ---RULES---
+    -- 1) Rental vehicle is nearby (based radius from rental spot) -- plate will read "RENT XXX" (config) --> check our server list if it is out
+    -- 2) Check if user has the vehicle rental (rental papers in inventory)
+    local nearby_rentals = {}
+    local vehList = GetGamePool('CVehicle')
+    local ped = PlayerPedId()
+    local vehicle_count = 0
+    for item, value in pairs(server_vehicles) do
+        vehicle_count = vehicle_count + 1
     end
 
-    local comp_options = {{
-        title = " Go Back",
-        description = "",
-        icon = "angle-left",
-        event = "rentacar:exitPreview"
-    }, {
-        title = data.label,
-        description = desc,
-        arrow = false,
-        event = event_function,
-        icon = data.icon,
-        iconColor = icon_color,
-        args = {
-            data = data,
-            spawns = getSpawnLocations("Touchdown Rentals")
-        }
-    }}
+    clientDebugPrint("GOT VEHICLE COUNT : ", vehicle_count)
 
-    lib.registerContext({
-        id = 'rental_menu2',
-        title = "🏈 Touchdown Rentals",
-        options = comp_options,
-        onExit = function()
-            SendNUIMessage({
-                type = "ui",
-                data = false
-            })
-            SetNuiFocus(false, false)
-            TriggerEvent("rentacar:exit")
+    for k, v in pairs(vehList) do
+        local distance = GetDistanceBetweenCoords(GetEntityCoords(ped), GetEntityCoords(v), false)
+        local v_plate = GetVehicleNumberPlateText(v)
+        -- get the plate of the vehicle and follow rule one
+        if distance < 20 and ped ~= v then
+            for plate_value, info in pairs(server_vehicles) do
+                if tostring(plate_value) == v_plate then
+                    local veh_model = GetDisplayNameFromVehicleModel(GetEntityModel(v))
+                    clientDebugPrint(GetLabelText(GetDisplayNameFromVehicleModel(GetEntityModel(v))),
+                        GetVehicleModelValue(GetEntityModel(v)))
+                    local primary, secondary = GetVehicleColours(v)
+                    table.insert(nearby_rentals, {
+                        veh = v,
+                        plate = v_plate,
+                        color = __VEHICLE_COLORS__[primary],
+                        model = veh_model,
+                        vin = v_plate
+                    }) -- get color and model 
+                end
+            end
         end
+    end
 
-    })
-
-    lib.showContext('rental_menu2')
-    TriggerEvent("ox_lib:enableKeys", "rentacar")
+    if #nearby_rentals == 0 then
+        return 0
+    else
+        return nearby_rentals
+    end
 end
 
--- MENU HELPERS
 function spawnAndCalculateData(data)
     local new_data = data
     -- spawn vehicle
@@ -521,7 +504,7 @@ function spawnAndCalculateData(data)
     ESX.TriggerServerCallback("getRentalCount", function(rental_count)
         SetVehicleNumberPlateText(currentVeh, Config.PlateText .. string.format("%03d", rental_count % 1000))
     end)
-    SetVehicleEngineOn(currentVeh, true, true, false)
+    SetVehicleEngineOn(currentVeh, false, true, true)
     Camera()
 
     -- from vehicle, calculate --> | mph | mpg | seats | storage |
@@ -681,4 +664,305 @@ function second(time)
     local minutes = math.floor((time % 3600 / 60))
     local seconds = math.floor((time % 60))
     return string.format("%02dm %02ds", minutes, seconds)
+end
+
+function papersFor(rental_plate)
+    for item, data in pairs(player_papers) do
+        clientDebugPrint("Papers For: ", item, data.plate, data.model, data.color, data.vin)
+        if tostring(item) == rental_plate then
+            return true
+        end
+    end
+    return false
+end
+
+-- function hasPapers(plate_name)
+--     return (TriggerServerEvent("rentacar:hasPapers", plate_name))
+-- end
+RegisterNetEvent("rentacar:setPapers")
+AddEventHandler("rentacar:setPapers", function(papers)
+    has_papers = papers
+end)
+
+RegisterNetEvent("rentacar:rentalReturned")
+AddEventHandler("rentacar:rentalReturned", function(args)
+    local plate = args.plate
+    local model = args.model
+    -- local ped = PlayerPedId()
+    local veh_list = getNearbyRentals()
+
+    -- Delete vehicle
+    for _, v in pairs(veh_list) do
+        if DoesEntityExist(v.veh) and NetworkHasControlOfEntity(v.veh) and v.plate == plate then
+            local veh_hash = GetEntityModel(v.veh)
+            clientDebugPrint("-- RETURNED HASH --")
+            clientDebugPrint(veh_hash)
+            clientDebugPrint("Hash: ", veh_hash, "Name: ", __VEHICLE_HASH__[veh_hash].name, "Class: ",
+                GetVehicleClassFromName(veh_hash))
+            local veh_model = string.lower(__VEHICLE_HASH__[veh_hash].name)
+
+            ESX.Game.DeleteVehicle(v.veh)
+            -- Delete Inventory
+            TriggerServerEvent("rentacar:deleteInventory", v.plate, veh_model)
+            -- Update Stock
+            TriggerServerEvent("rentacar:returnedStock", veh_model)
+
+            -- Return deposit to player
+            local deposit = 0
+            for _, vehicle in pairs(Config.Vehicles) do
+                if vehicle.model == veh_model then
+                    deposit = vehicle.deposit
+                    break
+                end
+            end
+            TriggerServerEvent("rentacar:giveDeposit", deposit)
+            -- Delete Keys
+            TriggerServerEvent('keys:deleteCarKeys', v.plate, "rental")
+            break
+        end
+    end
+    refreshStock()
+
+end)
+
+-- MENU GENERATOR
+-- Main Menu
+callMainMenuUI = function(label)
+    clientDebugPrint("CALLED MAIN MENU")
+    ESX.TriggerServerCallback("rentacar:getPlayerRentals", function(vehicle_list)
+        server_vehicles = vehicle_list
+    end)
+    ESX.TriggerServerCallback("rentacar:getPlayerPapers", function(papers)
+        player_papers = papers
+    end)
+    local comp_options = {{
+        title = "Return Vehicle",
+        description = "",
+        arrow = true,
+        icon = "square-parking",
+        iconColor = "#eee813",
+        onSelect = function()
+            composeNearbySelections()
+        end
+    }, {
+        title = "View Rentals",
+        description = "",
+        arrow = true,
+        icon = "key",
+        iconColor = "#1394ee",
+        onSelect = function()
+            callRentalMenuUI()
+        end
+    }}
+
+    lib.registerContext({
+        id = 'main_menu',
+        title = Config.Locations[label].label,
+        options = comp_options,
+        onExit = function()
+            SendNUIMessage({
+                type = "ui",
+                data = false
+            })
+            TriggerEvent("rentacar:exit")
+        end
+
+    })
+    lib.showContext('main_menu')
+
+end
+
+-- RETURN CHOICES
+callReturnMenuUI = function()
+    -- scan area radius from vendor, return list of supported vehicles*
+    -- *supported vehicles must exist in current server list
+end
+-- RENTAL CHOICES
+callRentalMenuUI = function()
+    local comp_options = {}
+    comp_options = {{
+        title = " Go Back",
+        description = "",
+        icon = "angle-left",
+        onSelect = function()
+            callMainMenuUI("Touchdown Rentals")
+        end
+    }}
+    for k, v in pairs(Config.Vehicles) do
+        local available_text = "  |  Available"
+        local icon_color = "#67ee7f"
+        if (veh_stocks[v.model] <= 0) then
+            available_text = ""
+            icon_color = "#8a3737"
+        elseif (veh_stocks[v.model] <= 5) then
+            available_text = "  |  Low"
+            icon_color = "#f9ab53"
+        end
+
+        comp_options[k + 1] = {
+            title = Config.Vehicles[k].label,
+            description = "Due: $" .. (Config.Vehicles[k].price + Config.Vehicles[k].deposit) .. available_text,
+            arrow = true,
+            icon = Config.Vehicles[k].icon,
+            iconColor = icon_color,
+            event = "rentacar:previewRentalView",
+            args = Config.Vehicles[k], -- Table containing: model | label | price | stock
+            onSelect = TriggerEvent("rentacar:cleanupPreviewArea")
+        }
+    end
+    lib.registerContext({
+        id = 'rental_menu',
+        title = "🏈 Touchdown Rentals",
+        options = comp_options,
+        onExit = function()
+            SendNUIMessage({
+                type = "ui",
+                data = false
+            })
+            TriggerEvent("rentacar:exit")
+        end
+
+    })
+    lib.showContext('rental_menu')
+
+end
+
+-- Rental Preview (Looking at Car Selected)
+previewRentalView = function(data)
+    local event_function = nil
+    local desc = "Out of Stock"
+    local icon_color = "#8a3737"
+
+    if (veh_stocks[data.model] > 0) then
+        event_function = "rentacar:rentVehicle"
+        desc = "$" .. (data.price + data.deposit) .. " | Pay Now"
+        icon_color = "#67ee7f"
+    end
+
+    local comp_options = {{
+        title = " Go Back",
+        description = "",
+        icon = "angle-left",
+        event = "rentacar:exitPreview",
+        onSelect = function()
+            callRentalMenuUI()
+        end
+
+    }, {
+        title = "$" .. data.deposit .. " | Deposit",
+        description = "(Returned upon dropoff)",
+        icon = "money-bill-transfer",
+        arrow = false,
+        disabled = true
+    }, {
+        title = "$" .. data.price .. " | Fee",
+        description = "(You thought it was free?)",
+        icon = "money-bill-wave",
+        arrow = false,
+        disabled = true
+    }, {
+        title = data.label,
+        description = desc,
+        arrow = false,
+        event = event_function,
+        icon = "cash-register",
+        iconColor = icon_color,
+        args = {
+            data = data,
+            spawns = getSpawnLocations("Touchdown Rentals")
+        }
+    }}
+
+    lib.registerContext({
+        id = 'rental_menu2',
+        title = "🏈 Touchdown Rentals",
+        options = comp_options,
+        onExit = function()
+            SendNUIMessage({
+                type = "ui",
+                data = false
+            })
+            SetNuiFocus(false, false)
+            TriggerEvent("rentacar:exit")
+        end
+
+    })
+
+    lib.showContext('rental_menu2')
+    TriggerEvent("ox_lib:enableKeys", "rentacar")
+end
+
+-- MENU HELPERS
+
+function composeNearbySelections()
+    local comp = {}
+    local rentals = getNearbyRentals() or 0 -- return -1 if no rental for user
+
+    comp = {{
+        title = " Go Back",
+        description = "",
+        icon = "angle-left",
+        event = "rentacar:exitPreview",
+        onSelect = function()
+            callMainMenuUI("Touchdown Rentals")
+        end
+
+    }}
+    if type(rentals) ~= "table" or rentals == 0 then
+        table.insert(comp, {
+            title = "No Rental Nearby",
+            description = "move vehicle closer",
+            arrow = false,
+            disabled = true,
+            icon = "car",
+            iconColor = "#878787"
+        })
+    else
+        for _, v in pairs(rentals) do
+            local papers = papersFor(v.plate)
+            local icon_col = "#878787"
+            local paper_text = "[ MISSING PAPERS ]"
+            if papers then
+                paper_text = ""
+                icon_col = "#67ee7f"
+            else
+                icon_col = "#8a3737"
+            end
+            table.insert(comp, {
+                title = v.model,
+                disabled = not papers,
+                description = "PLATE: " .. v.plate,
+                arrow = false,
+                icon = "car",
+                iconColor = icon_col,
+                metadata = {v.color, paper_text},
+                event = "rentacar:rentalReturned",
+                args = {
+                    model = v.model,
+                    color = v.color,
+                    plate = v.plate,
+                    vin = v.vin
+                }
+            })
+
+        end
+    end
+
+    lib.registerContext({
+        id = 'return_menu',
+        title = "🏈 Touchdown Rentals",
+        description = "Return Rentals",
+        options = comp,
+        onExit = function()
+            SendNUIMessage({
+                type = "ui",
+                data = false
+            })
+            SetNuiFocus(false, false)
+            TriggerEvent("rentacar:exit")
+        end
+
+    })
+    lib.showContext('return_menu')
+
 end
